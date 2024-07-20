@@ -1,0 +1,46 @@
+name: Autograding Tests
+on:
+  push:
+  workflow_dispatch:
+  repository_dispatch:
+
+permissions:
+  checks: write
+  actions: read
+  contents: read
+
+jobs:
+  run-autograding-tests:
+    runs-on: ubuntu-latest
+    if: github.actor != 'github-classroom[bot]'
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y build-essential cmake libgtest-dev
+
+    - name: Build Google Test
+      run: |
+        cd /usr/src/gtest
+        sudo cmake CMakeLists.txt
+        sudo make
+        sudo cp *.a /usr/lib
+
+    - name: Configure CMake
+      run: cmake .
+
+    - name: Build the project
+      run: make
+
+    - name: Run tests
+      run: make test
+      continue-on-error: true
+      
+    - name: Autograding Reporter
+      uses: classroom-resources/autograding-grading-reporter@v1
+      with:
+        runners: run-autograding-tests
